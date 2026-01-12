@@ -1,0 +1,94 @@
+services:
+  db:
+    platform: linux/x86_64
+    # MySQL 8 を使うデータベース用コンテナ
+    image: mysql:8.0.27
+    container_name: rm-portal-python-db
+    restart: unless-stopped
+    # 文字コード設定（UTF-8系）
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    env_file: .env  # 環境変数は .env から読み込む
+    environment:
+      # DB名/ユーザー/パスワードは .env から注入
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${MYSQL_TZ}  # タイムゾーン
+    volumes:
+      - db_data:/var/lib/mysql  # DBデータの永続化
+    networks:
+      - backend_network  # Django などバックエンド系と同じネットワークに参加
+
+  django:
+    container_name: rm-portal-python-django
+    platform: linux/x86_64
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app  # ソースをマウント（開発向け）
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # ホットリロード用
+      - DEBUG=${DJANGO_DEBUG:-1}
+      - TEMPLATE_DEBUG=${DJANGO_DEBUG:-1}
+      - DATABASES_ENGINE=django.db.backends.mysql  # MySQL を使用
+      - DATABASES_NAME=${MYSQL_DATABASE}
+      - DATABASES_USER=${MYSQL_USER}
+      - DATABASES_PASSWORD=${MYSQL_PASSWORD}
+      - DATABASES_HOST=db  # db サービス名で接続
+      - DATABASES_PORT=3306
+      - ALLOWED_HOSTS=*  # 必要に応じて絞り込む
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+    command: gunicorn backend.wsgi --bind 0.0.0.0:8000 --reload --timeout 0  # 開発向け: reload あり
+    networks:
+      - backend_network
+      - frontend_network  # Nginx からのリバプロを受ける
+
+  frontend:
+    container_name: rm-portal-python-frontend
+    platform: linux/x86_64
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - ./frontend:/app  # ソースをマウント（開発向け）
+      - /app/node_modules  # コンテナ内の node_modules を保持
+    environment:
+      # Nginx 経由で API を呼ぶ
+      - API_BASE_URL=http://nginx/api
+      - NEXT_PUBLIC_API_BASE_URL=/api
+    command: sh -c "npm install \
+      && npm run dev -- --hostname 0.0.0.0 --port 3000"
+    depends_on:
+      - django  # API が先に立つ必要がある
+    networks:
+      - frontend_network  # Nginx と通信する
+
+  nginx:
+    container_name: rm-portal-python-nginx
+    platform: linux/x86_64
+    build:
+      context: ./nginx/
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"  # ホスト8080→コンテナ80
+    volumes:
+      - ./nginx/conf:/etc/nginx/temp  # 設定ファイルをマウント
+      - ./backend/static:/app/static  # 静的ファイル
+      - ./backend/media:/app/media    # メディアファイル
+    depends_on:
+      - django    # API バックエンド
+      - frontend  # フロント配信用
+    environment:
+      - BASIC=${BASIC:-false}  # ベーシック認証のオン/オフ
+    networks:
+      - frontend_network  # フロント側ネットワーク
+
+networks:
+  frontend_network:  # Nginx/Frontend/Django をつなぐ
+  backend_network:   # Django/DB をつなぐ
+
+volumes:
+  db_data:  # MySQL データ永続化用

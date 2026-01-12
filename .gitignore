@@ -1,0 +1,53 @@
+# MySQL 関連（Docker などで生成された一時データなど）
+mysql/
+
+# document
+doc/
+
+# Python コンパイルキャッシュ
+**/__pycache__/
+**/*.pyc
+
+# メディアファイル（アップロード画像など）
+backend/media/
+
+# ログファイル
+backend/uwsgi.log
+backend/backend/django.log
+
+# 環境変数ファイル
+*/.env
+
+# 不要な隠しフォルダなど（例：VSCode 用）
+.vscode/
+
+# migrations ファイル（全て無視する）
+**/migrations/
+
+# csv
+**/csv/*.csv
+
+# frontend build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.*.local
+
+# Frontend other artifacts
+frontend/.pnp
+frontend/.pnp.js
+frontend/build/
+frontend/coverage/
+
+# OS/misc
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 仮想環境を使用している場合用
+.venv/
+env/
