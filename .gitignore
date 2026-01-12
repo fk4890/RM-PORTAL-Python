@@ -16,6 +16,7 @@ backend/uwsgi.log
 backend/backend/django.log
 
 # 環境変数ファイル
+.env
 */.env
 
 # 不要な隠しフォルダなど（例：VSCode 用）
