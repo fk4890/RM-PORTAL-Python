@@ -15,4 +15,5 @@ RUN pip install --upgrade pip setuptools wheel \
 COPY . .
 
 # Default command (compose overrides this)
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Django プロジェクト名を config にリネームしたのでエントリポイントを修正
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
