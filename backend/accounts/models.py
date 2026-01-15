@@ -30,13 +30,16 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     class Role(models.TextChoices):
-        ADMIN = "ADMIN", "Admin"
-        MEMBER = "MEMBER", "Member"
+        ADMIN = "00", "管理者"
+        GL = "01", "GL"
+        TL = "02", "TL"
+        MEMBER = "03", "メンバー"
+        VIEWER = "05", "参照"
 
     username = models.CharField(max_length=150, unique=True)
     hire_date = models.DateField(null=True, blank=True)
     is_ta = models.BooleanField(default=False)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
+    role = models.CharField(max_length=2, choices=Role.choices, default=Role.VIEWER)
     is_active = models.BooleanField(default=True)
 
     objects = UserManager()
