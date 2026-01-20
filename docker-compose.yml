@@ -19,6 +19,9 @@ services:
       - db_data:/var/lib/mysql  # DBデータの永続化
     networks:
       - backend_network  # Django などバックエンド系と同じネットワークに参加
+    ports:
+      - "3307:3306"
+
 
   django:
     container_name: rm-portal-python-django
@@ -40,7 +43,7 @@ services:
       - DATABASES_PORT=3306
       - ALLOWED_HOSTS=*  # 必要に応じて絞り込む
       - SECRET_KEY=${DJANGO_SECRET_KEY}
-    command: gunicorn backend.wsgi --bind 0.0.0.0:8000 --reload --timeout 0  # 開発向け: reload あり
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --reload --timeout 0  # プロジェクトパッケージ名に合わせる
     networks:
       - backend_network
       - frontend_network  # Nginx からのリバプロを受ける
