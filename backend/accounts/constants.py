@@ -29,9 +29,11 @@ class AccountsValues:
 class AccountsFormConstants:
     """User 関連のバリデーション・選択肢"""
 
-    USERNAME_MAX_LENGTH = 150
+    USERNAME_MIN_LENGTH = 1
+    USERNAME_MAX_LENGTH = 8
     PASSWORD_MIN_LENGTH = 4
     PASSWORD_MAX_LENGTH = 32
+    DAILY_STUDY_MINUTES_MAX = 1440  # 24時間を上限にする
 
     ROLE_CHOICES = [
         (AccountsValues.ROLE_ADMIN, "管理者"),

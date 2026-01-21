@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 
-from .constants import AccountsFormConstants, AccountsValues
+from .constants import AccountsFormConstants as AFC, AccountsValues as AV
 from . import validators
 
 
@@ -17,7 +17,7 @@ class UserManager(BaseUserManager):
         password: str,
         *,
         is_ta: bool = False,
-        role: str = AccountsValues.ROLE_VIEWER,
+        role: str = AV.ROLE_VIEWER,
         hire_date=None,
         is_active: bool = True,
     ):
@@ -39,7 +39,7 @@ class UserManager(BaseUserManager):
         password: str,
         *,
         is_ta: bool = False,
-        role: str = AccountsValues.ROLE_VIEWER,
+        role: str = AV.ROLE_VIEWER,
         hire_date=None,
         is_active: bool = True,
     ):
@@ -60,7 +60,7 @@ class UserManager(BaseUserManager):
         password: str,
         *,
         is_ta: bool = False,
-        role: str = AccountsValues.ROLE_VIEWER,
+        role: str = AV.ROLE_VIEWER,
         hire_date=None,
         is_active: bool = True,
     ):
@@ -73,20 +73,23 @@ class UserManager(BaseUserManager):
             is_ta=is_ta,
             role=role,
             hire_date=hire_date,
-            is_active=True,  # superuser 相当は常に有効化して作成
+            is_active=True,
         )
         user.save(using=self._db)
         return user
 
 
 class User(AbstractBaseUser):
-    username = models.CharField(max_length=150, null=False, blank=False, unique=True)
+    username = models.CharField(
+        max_length=AFC.USERNAME_MAX_LENGTH,
+        unique=True,
+    )
     hire_date = models.DateField(null=False, blank=False)
     is_ta = models.BooleanField(default=False)
     role = models.CharField(
         max_length=2,
-        choices=AccountsFormConstants.ROLE_CHOICES,
-        default=AccountsValues.ROLE_VIEWER,
+        choices=AFC.ROLE_CHOICES,
+        default=AV.ROLE_VIEWER,
     )
     is_active = models.BooleanField(default=True)
 
@@ -98,7 +101,6 @@ class User(AbstractBaseUser):
     def __str__(self) -> str:
         return f"{self.username} ({self.role})"
 
-    # 権限系は使用しないため False 固定
     @property
     def is_superuser(self) -> bool:
         return False
@@ -120,6 +122,9 @@ class UserPlanSettings(models.Model):
     target_months = models.PositiveSmallIntegerField(null=True, blank=True)
     daily_study_minutes = models.PositiveIntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        validators.validate_daily_study_minutes(self.daily_study_minutes)
 
     def __str__(self) -> str:
         return f"PlanSettings for {self.user.username}"
